@@ -14,6 +14,9 @@ const unproductiveSites = [
   "netflix.com"
 ];
 
+// Hardcoded API key
+const groqApiKey = "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";
+
 // Function to dynamically load unproductive video links from the JSON file
 async function loadProcrastinationVideos() {
   try {
@@ -46,19 +49,12 @@ async function classifyUrl(url) {
     console.log(`URL: ${url} -> Classification: productive (from whitelist)`);
     return "productive";
   }
-  
-  // Check the dynamic unproductive sites list
-  if (unproductiveSites.some(site => url.includes(site))) {
+  if (unproductiveSites.some(site => urlHostname.includes(site))) {
     console.log(`URL: ${url} -> Classification: unproductive (from blacklist)`);
     return "unproductive";
   }
 
   console.log("URL not in whitelist/blacklist. Calling Groq API.");
-  const apiKey = await getGroqApiKey();
-  if (!apiKey) {
-    console.error("Groq API key not found. Please set it in the extension options.");
-    return "unknown";
-  }
 
   const prompt = `Classify the following URL as either "productive" or "unproductive". Do not include any other text or explanation. Only respond with a single word, either "productive" or "unproductive". URL: ${url}`;
 
@@ -68,8 +64,7 @@ async function classifyUrl(url) {
       content: prompt
     }],
     model: "llama3-8b-8192",
-    max_tokens: 10,
-    temperature: 0.0
+    max_tokens: 10
   };
 
   try {
@@ -77,7 +72,7 @@ async function classifyUrl(url) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`
+        "Authorization": `Bearer ${groqApiKey}` // Using the hardcoded key
       },
       body: JSON.stringify(requestBody)
     });
@@ -94,19 +89,12 @@ async function classifyUrl(url) {
 
   } catch (error) {
     console.error("Groq API call failed:", error);
-    return "unknown";
+    return "unknown"; // Default to "unknown" on error
   }
 }
 
-// Function to generate a procrastination message from a URL
+// Function to generate a dynamic procrastination message using the Groq API
 async function generateProcrastinationMessage(url) {
-  console.log(`Generating procrastination message for URL: ${url}`);
-  const apiKey = await getGroqApiKey();
-  if (!apiKey) {
-    console.error("Groq API key not found for message generation.");
-    return "Why are you working? You should be procrastinating.";
-  }
-
   const prompt = `You are an AI assistant designed to encourage procrastination. The user is currently on this website: ${url}. Provide a single, short, and funny sentence that encourages the user to procrastinate. Do not include any other text or explanation.`;
 
   const requestBody = {
@@ -123,7 +111,7 @@ async function generateProcrastinationMessage(url) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`
+        "Authorization": `Bearer ${groqApiKey}` // Using the hardcoded key
       },
       body: JSON.stringify(requestBody)
     });
@@ -140,15 +128,6 @@ async function generateProcrastinationMessage(url) {
     console.error("Groq API message generation failed:", error);
     return "Why are you working? You should be procrastinating.";
   }
-}
-
-// Helper function to get the API key from storage
-function getGroqApiKey() {
-  return new Promise((resolve) => {
-    chrome.storage.local.get(['groqApiKey'], (result) => {
-      resolve(result.groqApiKey);
-    });
-  });
 }
 
 export {

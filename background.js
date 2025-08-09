@@ -8,15 +8,28 @@ import {
 const MAX_POPUP_COUNT = 3;
 let procrastinationPopupCount = 0;
 
-// This function starts the timer again
-const startProcrastinationTimer = () => {
-  clearTimeout(procrastinationTimer);
-  procrastinationTimer = setTimeout(checkActiveTabAndAct, 30000); // 30-second timer
-  console.log("Timer restarted. Next check in 30 seconds.");
+// Function to start the alarm
+const startProcrastinationAlarm = () => {
+  // Clear any existing alarm to prevent duplicates
+  chrome.alarms.clear("procrastinationAlarm");
+
+  // Create a new alarm that triggers every 30 seconds
+  chrome.alarms.create("procrastinationAlarm", {
+    delayInMinutes: 0.5,
+    periodInMinutes: 0.5
+  });
+  console.log("Alarm started. Next check in 30 seconds.");
 };
 
-let procrastinationTimer;
-startProcrastinationTimer();
+// Listen for the alarm to trigger
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === "procrastinationAlarm") {
+    checkActiveTabAndAct();
+  }
+});
+
+// Start the alarm when the service worker is activated
+startProcrastinationAlarm();
 
 async function checkActiveTabAndAct() {
   console.log("-----------------------------------------");
@@ -27,8 +40,7 @@ async function checkActiveTabAndAct() {
   });
 
   if (!tab || !tab.url || tab.url.startsWith('chrome://')) {
-    console.log("Invalid tab or URL, restarting timer.");
-    startProcrastinationTimer();
+    console.log("Invalid tab or URL, restarting alarm.");
     return;
   }
   console.log("Active tab URL:", tab.url);
@@ -39,7 +51,6 @@ async function checkActiveTabAndAct() {
   } = await chrome.storage.local.get('groqApiKey');
   if (!groqApiKey) {
     console.log("Groq API key not set. Skipping URL classification.");
-    startProcrastinationTimer();
     return;
   }
   console.log("Groq API key found. Proceeding with classification.");
@@ -75,7 +86,6 @@ async function checkActiveTabAndAct() {
           action: "showProcrastinationPopup",
           content: content
         });
-        startProcrastinationTimer();
       });
     } else {
       console.log("Pop-up limit reached. Opening a new tab with a video.");
@@ -92,12 +102,10 @@ async function checkActiveTabAndAct() {
       });
 
       procrastinationPopupCount = 0;
-      startProcrastinationTimer(); // Restart the timer
     }
   } else {
-    // If the site is unproductive, do nothing and restart the timer
+    // If the site is unproductive, do nothing
     console.log("Site is unproductive. Procrastination deferred.");
-    startProcrastinationTimer();
   }
   console.log("-----------------------------------------");
 }

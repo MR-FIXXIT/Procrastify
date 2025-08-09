@@ -1,26 +1,12 @@
 // Add these lines at the top of the file
 import {
-  classifyUrl
+  classifyUrl,
+  generateProcrastinationMessage
 } from "./groq_api.js";
 
 // Make sure to define these constants at the top of the file
 const MAX_POPUP_COUNT = 3;
 let procrastinationPopupCount = 0;
-
-// This will be a new function to get a random procrastination message
-const getRandomProcrastinationContent = () => {
-  const messages = [{
-    type: 'message',
-    content: "Don't you have something better to do? Like... anything?"
-  }, {
-    type: 'message',
-    content: "A quick break never hurt anyone. Just a quick one."
-  }, {
-    type: 'message',
-    content: "Look, I'm just here to help you achieve your true procrastination potential."
-  }, ];
-  return messages[Math.floor(Math.random() * messages.length)];
-};
 
 // This function starts the timer again
 const startProcrastinationTimer = () => {
@@ -66,10 +52,15 @@ async function checkActiveTabAndAct() {
     console.log("Site is productive. Considering a distraction.");
     // If we've reached the pop-up limit
     if (procrastinationPopupCount < MAX_POPUP_COUNT) {
-      // Show a modal pop-up message
       procrastinationPopupCount++;
       console.log(`Pop-up count is ${procrastinationPopupCount}. Showing a pop-up.`);
-      const content = getRandomProcrastinationContent();
+
+      // Use the new function to generate a dynamic message
+      const message = await generateProcrastinationMessage(tab.url);
+      const content = {
+        type: 'message',
+        content: message
+      };
 
       // Fix for script injection timing: use a callback
       chrome.scripting.executeScript({
@@ -101,7 +92,7 @@ async function checkActiveTabAndAct() {
       });
 
       procrastinationPopupCount = 0;
-      startProcrastinationTimer();
+      startProcrastinationTimer(); // Restart the timer
     }
   } else {
     // If the site is unproductive, do nothing and restart the timer

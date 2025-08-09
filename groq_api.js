@@ -73,6 +73,50 @@ async function classifyUrl(url) {
   }
 }
 
+// New function to generate a procrastination message from a URL
+async function generateProcrastinationMessage(url) {
+  console.log(`Generating procrastination message for URL: ${url}`);
+  const apiKey = await getGroqApiKey();
+  if (!apiKey) {
+    console.error("Groq API key not found for message generation.");
+    return "Why are you working? You should be procrastinating.";
+  }
+
+  const prompt = `You are an AI assistant designed to encourage procrastination. The user is currently on this website: ${url}. Provide a single, short, and funny sentence that encourages the user to procrastinate. Do not include any other text or explanation.`;
+
+  const requestBody = {
+    messages: [{
+      role: "user",
+      content: prompt
+    }],
+    model: "llama3-8b-8192",
+    max_tokens: 50
+  };
+
+  try {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const message = data.choices[0].message.content.trim();
+    console.log(`Generated message: ${message}`);
+    return message;
+  } catch (error) {
+    console.error("Groq API message generation failed:", error);
+    return "Why are you working? You should be procrastinating.";
+  }
+}
+
 // Helper function to get the API key from storage
 function getGroqApiKey() {
   return new Promise((resolve) => {
@@ -83,5 +127,6 @@ function getGroqApiKey() {
 }
 
 export {
-  classifyUrl
+  classifyUrl,
+  generateProcrastinationMessage
 };

@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "The Ultimate Procrastinator",
+  "version": "1.4",
+  "description": "Helping you achieve your procrastination goals, one distraction at a time.",
+  "permissions": [
+    "tabs",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["procrastination_tab.html", "procrastination_tab.js", "content.js", "style.css"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

@@ -45,14 +45,7 @@ async function checkActiveTabAndAct() {
   }
   console.log("Active tab URL:", tab.url);
 
-  // Add the API key check here
-  const {
-    groqApiKey
-  } = await chrome.storage.local.get('groqApiKey');
-  if (!groqApiKey) {
-    console.log("Groq API key not set. Skipping URL classification.");
-    return;
-  }
+  // Now the Groq API key is always available, so we don't need a check.
   console.log("Groq API key found. Proceeding with classification.");
 
   // Use the Groq API to classify the current site

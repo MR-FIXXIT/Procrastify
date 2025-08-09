@@ -3,7 +3,7 @@
   "name": "Procrastify",
   "version": "1.0",
   "description": "Encourages you to procrastinate with random distractions.",
-  "permissions": ["tabs"],
+  "permissions": ["tabs", "alarms"],
   "background": {
     "service_worker": "background.js"
   },

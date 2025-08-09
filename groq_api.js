@@ -8,7 +8,6 @@ const productiveSites = [
 
 // Blacklisted sites (unproductive)
 const unproductiveSites = [
-  "youtube.com",
   "facebook.com",
   "twitter.com",
   "reddit.com",

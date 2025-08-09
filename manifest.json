@@ -1,22 +1,30 @@
 {
   "manifest_version": 3,
   "name": "The Ultimate Procrastinator",
-  "version": "1.4",
+  "version": "1.8",
   "description": "Helping you achieve your procrastination goals, one distraction at a time.",
   "permissions": [
     "tabs",
     "activeTab",
-    "scripting"
+    "scripting",
+    "storage"
   ],
   "host_permissions": [
     "<all_urls>"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
+  "options_page": "options.html",
   "web_accessible_resources": [
     {
-      "resources": ["procrastination_tab.html", "procrastination_tab.js", "content.js", "style.css"],
+      "resources": [
+        "procrastination_videos.json",
+        "content.js",
+        "style.css",
+        "groq_api.js"
+      ],
       "matches": ["<all_urls>"]
     }
   ]

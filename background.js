@@ -1,118 +1,112 @@
-// A list of work-based site domains to check against
-const workSites = [
-  "docs.google.com",
-  "meet.google.com",
-  "drive.google.com",
-  "trello.com",
-  "asana.com",
-  "slack.com",
-  "notion.so",
-  "jira.com",
-  "figma.com",
-  "miro.com"
-];
+// Add these lines at the top of the file
+import {
+  classifyUrl
+} from "./groq_api.js";
 
-// List of fun, useless procrastination messages
-const procrastinationMessages = [
-  "Your spirit animal is a sloth. It's time to honor it.",
-  "The universe is telling you to reconsider your life choices and get a snack.",
-  "You've been working hard. Take a 15-minute break. Or an hour. Nobody's watching.",
-  "Did you know that you can't hum while holding your nose? Try it.",
-  "A little procrastination is a good thing. It's called 'strategic resting'."
-];
+// Make sure to define these constants at the top of the file
+const MAX_POPUP_COUNT = 3;
+let procrastinationPopupCount = 0;
 
-// List of useless video recommendations with titles and URLs
-const videoRecommendations = [
-  {
-    title: "Watch 10 Hours of Fireplace for Cats",
-    url: "https://www.youtube.com/watch?v=DX-Y2K604q8"
-  },
-  {
-    title: "The Best Sandwich of 2025",
-    url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-  },
-  {
-    title: "Funny Cat Moments of 2025",
-    url: "https://www.youtube.com/watch?v=hS_l6Q15B-c"
-  },
-  {
-    title: "A 4-hour video of paint drying",
-    url: "https://www.youtube.com/watch?v=1F_E31T5d6w"
-  }
-];
+// This will be a new function to get a random procrastination message
+const getRandomProcrastinationContent = () => {
+  const messages = [{
+    type: 'message',
+    content: "Don't you have something better to do? Like... anything?"
+  }, {
+    type: 'message',
+    content: "A quick break never hurt anyone. Just a quick one."
+  }, {
+    type: 'message',
+    content: "Look, I'm just here to help you achieve your true procrastination potential."
+  }, ];
+  return messages[Math.floor(Math.random() * messages.length)];
+};
 
-// The main function to set a new timer
-function startProcrastinationTimer() {
-  // Random timer between 1 and 10 seconds (in milliseconds) for testing
-  const randomSeconds = Math.floor(Math.random() * 10) + 1;
-  const delay = randomSeconds * 1000;
+// This function starts the timer again
+const startProcrastinationTimer = () => {
+  clearTimeout(procrastinationTimer);
+  procrastinationTimer = setTimeout(checkActiveTabAndAct, 30000); // 30-second timer
+  console.log("Timer restarted. Next check in 30 seconds.");
+};
 
-  setTimeout(() => {
-    checkActiveTabAndAct();
-  }, delay);
-}
+let procrastinationTimer;
+startProcrastinationTimer();
 
-// Function to get a random procrastination content
-function getRandomProcrastinationContent() {
-  if (Math.random() > 0.5) {
-    return {
-      type: 'message',
-      content: procrastinationMessages[Math.floor(Math.random() * procrastinationMessages.length)]
-    };
-  } else {
-    return {
-      type: 'video',
-      content: videoRecommendations[Math.floor(Math.random() * videoRecommendations.length)]
-    };
-  }
-}
-
-// Function to check the active tab and decide what to do
 async function checkActiveTabAndAct() {
+  console.log("-----------------------------------------");
+  console.log("Ultimate Procrastinator is checking the active tab...");
   const [tab] = await chrome.tabs.query({
     active: true,
     currentWindow: true
   });
 
   if (!tab || !tab.url || tab.url.startsWith('chrome://')) {
+    console.log("Invalid tab or URL, restarting timer.");
     startProcrastinationTimer();
     return;
   }
+  console.log("Active tab URL:", tab.url);
 
-  const isWorkSite = workSites.some(site => tab.url.includes(site));
-  const content = getRandomProcrastinationContent();
-
-  if (isWorkSite) {
-    // --- UPDATED LOGIC HERE ---
-    // Open a new tab with our dedicated HTML file
-    const newTab = await chrome.tabs.create({ url: chrome.runtime.getURL('procrastination_tab.html') });
-
-    // Wait for a moment to ensure the page is loaded before sending the message
-    setTimeout(() => {
-      chrome.tabs.sendMessage(newTab.id, {
-        action: "showProcrastinationTabContent",
-        content: content
-      });
-    }, 500);
-
+  // Add the API key check here
+  const {
+    groqApiKey
+  } = await chrome.storage.local.get('groqApiKey');
+  if (!groqApiKey) {
+    console.log("Groq API key not set. Skipping URL classification.");
     startProcrastinationTimer();
-
-  } else {
-    // Scenario B: User is on a normal site. Inject a modal popup.
-    chrome.scripting.executeScript({
-      target: {
-        tabId: tab.id
-      },
-      files: ['content.js']
-    }, () => {
-      chrome.tabs.sendMessage(tab.id, {
-        action: "showProcrastinationPopup",
-        content: content
-      });
-      startProcrastinationTimer();
-    });
+    return;
   }
-}
+  console.log("Groq API key found. Proceeding with classification.");
 
-// Start the timer engine when the extension is installed or updated
-startProcrastinationTimer();
+  // Use the Groq API to classify the current site
+  const classification = await classifyUrl(tab.url);
+  console.log("Classification result:", classification);
+
+  if (classification === 'productive') {
+    console.log("Site is productive. Considering a distraction.");
+    // If we've reached the pop-up limit
+    if (procrastinationPopupCount < MAX_POPUP_COUNT) {
+      // Show a modal pop-up message
+      procrastinationPopupCount++;
+      console.log(`Pop-up count is ${procrastinationPopupCount}. Showing a pop-up.`);
+      const content = getRandomProcrastinationContent();
+
+      // Fix for script injection timing: use a callback
+      chrome.scripting.executeScript({
+        target: {
+          tabId: tab.id
+        },
+        files: ['content.js']
+      }, () => {
+        // Now that the script is injected, send the message
+        console.log("Content script injected. Sending message to show popup.");
+        chrome.tabs.sendMessage(tab.id, {
+          action: "showProcrastinationPopup",
+          content: content
+        });
+        startProcrastinationTimer();
+      });
+    } else {
+      console.log("Pop-up limit reached. Opening a new tab with a video.");
+      // Open a new YouTube video tab
+      const videosUrl = chrome.runtime.getURL('procrastination_videos.json');
+      const response = await fetch(videosUrl);
+      const videoRecommendations = await response.json();
+
+      const randomVideo = videoRecommendations[Math.floor(Math.random() * videoRecommendations.length)];
+
+      // Directly open the YouTube video URL in a new tab
+      chrome.tabs.create({
+        url: randomVideo.url
+      });
+
+      procrastinationPopupCount = 0;
+      startProcrastinationTimer();
+    }
+  } else {
+    // If the site is unproductive, do nothing and restart the timer
+    console.log("Site is unproductive. Procrastination deferred.");
+    startProcrastinationTimer();
+  }
+  console.log("-----------------------------------------");
+}

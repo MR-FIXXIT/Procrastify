@@ -1,14 +1,19 @@
+console.log("Content script loaded.");
+
 // Listen for messages from the background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "showProcrastinationPopup") {
+    console.log("Message received to show procrastination popup:", request.content);
     // Create and display the modal popup
     createProcrastinationModal(request.content);
   }
 });
 
 function createProcrastinationModal(content) {
+  console.log("Creating procrastination modal.");
   // Check if a modal already exists to prevent duplicates
   if (document.getElementById('procrastination-modal-overlay')) {
+    console.log("Modal already exists. Aborting creation.");
     return;
   }
 
@@ -39,7 +44,10 @@ function createProcrastinationModal(content) {
   const closeButton = document.createElement('button');
   closeButton.className = 'procrastination-close';
   closeButton.innerHTML = '&times;';
-  closeButton.onclick = () => overlay.remove();
+  closeButton.onclick = () => {
+    console.log("Close button clicked. Removing modal.");
+    overlay.remove();
+  };
 
   // Append elements to the modal and then to the overlay
   modal.appendChild(contentElement);
@@ -55,4 +63,5 @@ function createProcrastinationModal(content) {
 
   // Add the overlay to the body
   document.body.appendChild(overlay);
+  console.log("Procrastination modal successfully created and displayed.");
 }

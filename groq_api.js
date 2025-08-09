@@ -6,13 +6,36 @@ const productiveSites = [
   "developer.mozilla.org"
 ];
 
-// Blacklisted sites (unproductive)
+// Blacklisted sites (unproductive) - This will be populated dynamically
 const unproductiveSites = [
   "facebook.com",
   "twitter.com",
   "reddit.com",
   "netflix.com"
 ];
+
+// Function to dynamically load unproductive video links from the JSON file
+async function loadProcrastinationVideos() {
+  try {
+    const videosUrl = chrome.runtime.getURL('procrastination_videos.json');
+    const response = await fetch(videosUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch video list: ${response.status}`);
+    }
+    const videoRecommendations = await response.json();
+    videoRecommendations.forEach(video => {
+      // Add the full URL to the unproductive sites list
+      unproductiveSites.push(video.url);
+    });
+    console.log("Unproductive video URLs loaded successfully.");
+    console.log("Current Unproductive Sites List:", unproductiveSites);
+  } catch (error) {
+    console.error("Error loading procrastination videos:", error);
+  }
+}
+
+// Call the function to load the videos when the script starts
+loadProcrastinationVideos();
 
 // Function to classify a URL using the Groq LLM
 async function classifyUrl(url) {
@@ -23,7 +46,9 @@ async function classifyUrl(url) {
     console.log(`URL: ${url} -> Classification: productive (from whitelist)`);
     return "productive";
   }
-  if (unproductiveSites.some(site => urlHostname.includes(site))) {
+  
+  // Check the dynamic unproductive sites list
+  if (unproductiveSites.some(site => url.includes(site))) {
     console.log(`URL: ${url} -> Classification: unproductive (from blacklist)`);
     return "unproductive";
   }
@@ -42,8 +67,9 @@ async function classifyUrl(url) {
       role: "user",
       content: prompt
     }],
-    model: "llama3-8b-8192", // You can change this to a different model if you prefer
-    max_tokens: 10
+    model: "llama3-8b-8192",
+    max_tokens: 10,
+    temperature: 0.0
   };
 
   try {
@@ -68,11 +94,11 @@ async function classifyUrl(url) {
 
   } catch (error) {
     console.error("Groq API call failed:", error);
-    return "unknown"; // Default to "unknown" on error
+    return "unknown";
   }
 }
 
-// New function to generate a procrastination message from a URL
+// Function to generate a procrastination message from a URL
 async function generateProcrastinationMessage(url) {
   console.log(`Generating procrastination message for URL: ${url}`);
   const apiKey = await getGroqApiKey();

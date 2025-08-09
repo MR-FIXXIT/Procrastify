@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "The Ultimate Procrastinator",
+  "version": "1.8",
+  "description": "Helping you achieve your procrastination goals, one distraction at a time.",
+  "permissions": [
+    "tabs",
+    "activeTab",
+    "scripting",
+    "alarms"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "procrastination_videos.json",
+        "content.js",
+        "style.css",
+        "groq_api.js"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
